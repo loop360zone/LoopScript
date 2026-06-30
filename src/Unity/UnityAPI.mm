@@ -1,7 +1,7 @@
 #include "UnityAPI.h"
 #include "../SSIncludes.h"
 
-@import Foundation;
+#import <Foundation/Foundation.h>
 
 namespace UnityAPI {
 
