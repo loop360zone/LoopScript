@@ -19,8 +19,18 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
         run: |
           git clone --recursive --depth 1 https://github.com/theos/theos.git "$THEOS"
-          git clone --depth 1 https://github.com/theos/sdks.git "$THEOS/sdks" || true
-          ls "$THEOS/sdks" || true
+
+      - name: Link iOS SDK from Xcode
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: |
+          SDK_PATH="$(xcrun --sdk iphoneos --show-sdk-path)"
+          SDK_NAME="$(basename "$SDK_PATH")"
+          mkdir -p "$THEOS/sdks"
+          ln -sf "$SDK_PATH" "$THEOS/sdks/$SDK_NAME"
+          ln -sf "$SDK_PATH" "$THEOS/sdks/iPhoneOS16.5.sdk"
+          echo "SDK=$SDK_NAME"
+          ls -la "$THEOS/sdks/"
 
       - name: Setup ImGui
         run: bash scripts/setup_imgui.sh
@@ -30,9 +40,9 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
         run: |
           make clean || true
-          make package FINALPACKAGE=1
+          make package FINALPACKAGE=1 2>&1 | tee build.log
+          tail -n 100 build.log
           ls -la packages/
-          file packages/*.deb
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
