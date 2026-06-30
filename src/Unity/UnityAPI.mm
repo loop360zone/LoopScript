@@ -1,12 +1,7 @@
 #include "UnityAPI.h"
-#include "../Settings.h"
+#include "../SSIncludes.h"
 
-#import <Foundation/Foundation.h>
-#import <dlfcn.h>
-#import <mach-o/dyld.h>
-#import <string>
-#import <unordered_map>
-#import <mutex>
+@import Foundation;
 
 namespace UnityAPI {
 

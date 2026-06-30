@@ -5,13 +5,12 @@
 #include "../Features/Teleport.h"
 
 #include "imgui.h"
-#include <atomic>
 
 namespace MenuRenderer {
 
-static std::atomic<bool> s_configsLoaded{false};
+static Settings::AtomicBool s_configsLoaded{false};
 
-static bool AtomicCheckbox(const char *label, std::atomic<bool> &v) {
+static bool AtomicCheckbox(const char *label, Settings::AtomicBool &v) {
     bool local = v.load();
     if (ImGui::Checkbox(label, &local)) {
         v.store(local);
@@ -21,7 +20,7 @@ static bool AtomicCheckbox(const char *label, std::atomic<bool> &v) {
     return false;
 }
 
-static bool AtomicSliderFloat(const char *label, std::atomic<float> &v, float minV, float maxV) {
+static bool AtomicSliderFloat(const char *label, Settings::AtomicFloat &v, float minV, float maxV) {
     float local = v.load();
     if (ImGui::SliderFloat(label, &local, minV, maxV)) {
         v.store(local);
@@ -31,7 +30,7 @@ static bool AtomicSliderFloat(const char *label, std::atomic<float> &v, float mi
     return false;
 }
 
-static bool AtomicSliderInt(const char *label, std::atomic<int> &v, int minV, int maxV) {
+static bool AtomicSliderInt(const char *label, Settings::AtomicInt &v, int minV, int maxV) {
     int local = v.load();
     if (ImGui::SliderInt(label, &local, minV, maxV)) {
         v.store(local);

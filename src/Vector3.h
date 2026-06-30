@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cmath>
+#include "SSIncludes.h"
 
 struct Vector3 {
     float x = 0.f, y = 0.f, z = 0.f;
