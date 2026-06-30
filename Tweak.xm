@@ -3,10 +3,13 @@
 #include "Overlay/Overlay.h"
 
 static void SSScheduleInstall(void) {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)),
-                   dispatch_get_main_queue(), ^{
-        [[StateScriptOverlay shared] install];
-    });
+    const int64_t delays[] = {5, 9, 13, 17};
+    for (int i = 0; i < 4; i++) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delays[i] * NSEC_PER_SEC),
+                       dispatch_get_main_queue(), ^{
+            [[StateScriptOverlay shared] install];
+        });
+    }
 }
 
 static void SSOnAppActive() {
@@ -32,20 +35,8 @@ static void SSOnAppInactive() {
 
 %end
 
-%hook UIWindow
-
-- (void)makeKeyAndVisible {
-    %orig;
-    if (!self.hidden && self.windowLevel >= UIWindowLevelNormal) {
-        SSScheduleInstall();
-    }
-}
-
-%end
-
 %ctor {
     @autoreleasepool {
         Settings::Load();
-        SSScheduleInstall();
     }
 }
