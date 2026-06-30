@@ -1,6 +1,3 @@
-#import <UIKit/UIKit.h>
-#include "src/Settings.h"
-#include "src/Overlay/Overlay.h"
 
 static void SSOnAppActive() {
     Settings::bIsAppActive.store(true);
