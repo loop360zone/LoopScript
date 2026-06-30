@@ -27,7 +27,7 @@ StateScript_FILES = Tweak.xm \
 
 StateScript_CFLAGS = -fobjc-arc -fmodules -Wno-module-import-in-extern-c \
 	-Isrc -Ivendor/imgui -Ivendor/imgui/backends
-StateScript_CXXFLAGS = -std=c++17 -fmodules \
+StateScript_CXXFLAGS = -std=c++17 \
 	-Isrc -Ivendor/imgui -Ivendor/imgui/backends
 StateScript_LOGOSFLAGS = -I src -fmodules
 StateScript_LDFLAGS = -lc++
