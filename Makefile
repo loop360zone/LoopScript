@@ -27,8 +27,11 @@ StateScript_FILES = Tweak.xm \
 
 StateScript_CFLAGS = -fobjc-arc -Wno-module-import-in-extern-c \
 	-Isrc -Ivendor/imgui -Ivendor/imgui/backends
-StateScript_CXXFLAGS = -std=c++17 -Isrc -Ivendor/imgui -Ivendor/imgui/backends
+StateScript_CXXFLAGS = -std=c++17 -fobjc-arc \
+	-Isrc -Ivendor/imgui -Ivendor/imgui/backends
+StateScript_LOGOSFLAGS = -Isrc
 StateScript_LDFLAGS = -lc++
+StateScript_LIBRARIES = substrate
 StateScript_FRAMEWORKS = UIKit Foundation QuartzCore Metal MetalKit CoreGraphics
 
 include $(THEOS)/makefiles/tweak.mk
