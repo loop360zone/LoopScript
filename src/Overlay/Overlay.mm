@@ -7,14 +7,24 @@
 #include "../Features/PlayerScale.h"
 #include "../Features/Weapon.h"
 #include "../Features/Teleport.h"
-#include "../Unity/UnityAPI.h"
 
+#import <UIKit/UIKit.h>
 #import <Metal/Metal.h>
 #import <MetalKit/MetalKit.h>
 #import <QuartzCore/QuartzCore.h>
 
 #include "imgui.h"
 #include "imgui_impl_metal.h"
+
+static UIWindowScene *SSActiveWindowScene(void) {
+    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+        if (scene.activationState == UISceneActivationStateForegroundActive &&
+            [scene isKindOfClass:[UIWindowScene class]]) {
+            return (UIWindowScene *)scene;
+        }
+    }
+    return nil;
+}
 
 @interface StateScriptOverlayView : MTKView
 @end
@@ -56,16 +66,24 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.overlayWindow) return;
 
-        Settings::Load();
-        UnityAPI::Initialize();
-
         self.device = MTLCreateSystemDefaultDevice();
+        if (!self.device) return;
+
         self.commandQueue = [self.device newCommandQueue];
+        if (!self.commandQueue) return;
 
         CGRect bounds = UIScreen.mainScreen.bounds;
-        self.overlayWindow = [[UIWindow alloc] initWithFrame:bounds];
-        self.overlayWindow.windowLevel = UIWindowLevelAlert + 1;
+        UIWindowScene *scene = SSActiveWindowScene();
+        if (scene) {
+            self.overlayWindow = [[UIWindow alloc] initWithWindowScene:scene];
+            self.overlayWindow.frame = bounds;
+        } else {
+            self.overlayWindow = [[UIWindow alloc] initWithFrame:bounds];
+        }
+
+        self.overlayWindow.windowLevel = UIWindowLevelStatusBar + 1;
         self.overlayWindow.backgroundColor = UIColor.clearColor;
+        self.overlayWindow.opaque = NO;
         self.overlayWindow.userInteractionEnabled = YES;
 
         self.mtkView = [[StateScriptOverlayView alloc] initWithFrame:bounds device:self.device];
@@ -81,7 +99,8 @@
         UIViewController *vc = [UIViewController new];
         vc.view = self.mtkView;
         self.overlayWindow.rootViewController = vc;
-        [self.overlayWindow makeKeyAndVisible];
+
+        self.overlayWindow.hidden = NO;
 
         [self setupToggleButton];
     });
@@ -114,17 +133,6 @@
     bool show = !Settings::bShowMenu.load();
     Settings::bShowMenu.store(show);
     self.mtkView.userInteractionEnabled = YES;
-    if (Settings::bEnableNotifications.load()) {
-        NSString *msg = show ? @"StateScript Menu Opened" : @"StateScript Menu Closed";
-        if (!Settings::bStreamerMode.load()) {
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"StateScript"
-                                                                           message:msg
-                                                                    preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-            UIViewController *root = self.overlayWindow.rootViewController;
-            if (root) [root presentViewController:alert animated:YES completion:nil];
-        }
-    }
 }
 
 - (void)applyStreamerMode {
@@ -159,12 +167,16 @@
     float w = (float)view.drawableSize.width;
     float h = (float)view.drawableSize.height;
 
-    ESPFeature::Update(w, h);
-    AimbotFeature::Update(w, h);
-    MovementFeature::Update(dt);
-    PlayerScaleFeature::Update();
-    WeaponFeature::Update();
-    TeleportFeature::UpdateAuto();
+    if (w <= 0.f || h <= 0.f) return;
+
+    if (!Settings::Cheatoff.load()) {
+        ESPFeature::Update(w, h);
+        AimbotFeature::Update(w, h);
+        MovementFeature::Update(dt);
+        PlayerScaleFeature::Update();
+        WeaponFeature::Update();
+        TeleportFeature::UpdateAuto();
+    }
 
     id<MTLCommandBuffer> cmd = [self.commandQueue commandBuffer];
     MTLRenderPassDescriptor *pass = view.currentRenderPassDescriptor;
