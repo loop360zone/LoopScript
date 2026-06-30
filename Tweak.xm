@@ -1,4 +1,4 @@
-@import UIKit;
+#import <UIKit/UIKit.h>
 #include "Settings.h"
 #include "Overlay/Overlay.h"
 

@@ -1,5 +1,5 @@
 #include "Settings.h"
-@import Foundation;
+#import <Foundation/Foundation.h>
 
 namespace Settings {
 
