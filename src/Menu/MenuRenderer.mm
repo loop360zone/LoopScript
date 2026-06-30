@@ -160,7 +160,7 @@ static void RenderSettingsTab() {
 
     int lang = (int)Localization::GetLanguage();
     if (ImGui::Combo("Language", &lang, "English\0French\0German\0Italian\0Spanish\0")) {
-        Localization::SetLanguage((Localization::Lang)lang);
+        Localization::SetLanguage(static_cast<Lang>(lang));
     }
 
     AtomicSliderFloat("UI Scale", Settings::uiScale, 0.75f, 1.5f);
