@@ -1,0 +1,43 @@
+name: Build StateScript deb
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: brew install ldid xz
+
+      - name: Setup Theos
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: |
+          git clone --recursive --depth 1 https://github.com/theos/theos.git "$THEOS"
+          git clone --depth 1 https://github.com/theos/sdks.git "$THEOS/sdks" || true
+          ls "$THEOS/sdks" || true
+
+      - name: Setup ImGui
+        run: bash scripts/setup_imgui.sh
+
+      - name: Build .deb package
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: |
+          make clean || true
+          make package FINALPACKAGE=1
+          ls -la packages/
+          file packages/*.deb
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StateScript-deb
+          path: packages/*.deb
+          if-no-files-found: error
+          retention-days: 30
