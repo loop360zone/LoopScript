@@ -25,11 +25,11 @@ StateScript_FILES = Tweak.xm \
 	vendor/imgui/imgui_widgets.cpp \
 	vendor/imgui/backends/imgui_impl_metal.mm
 
-StateScript_CFLAGS = -std=c++17 -Wno-module-import-in-extern-c \
+StateScript_CFLAGS = -Wno-module-import-in-extern-c \
+	-Isrc -Ivendor/imgui -Ivendor/imgui/backends
+StateScript_CCFLAGS = -std=c++17 \
 	-Isrc -Ivendor/imgui -Ivendor/imgui/backends
 StateScript_OBJCFLAGS = -fobjc-arc
-StateScript_CXXFLAGS = -std=c++17 \
-	-Isrc -Ivendor/imgui -Ivendor/imgui/backends
 StateScript_LDFLAGS = -lc++
 StateScript_LIBRARIES = substrate
 StateScript_FRAMEWORKS = UIKit Foundation QuartzCore Metal MetalKit CoreGraphics
