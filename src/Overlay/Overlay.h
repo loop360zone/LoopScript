@@ -1,6 +1,6 @@
 #pragma once
 
-@import UIKit;
+#import <UIKit/UIKit.h>
 
 @interface StateScriptOverlay : NSObject
 + (instancetype)shared;
