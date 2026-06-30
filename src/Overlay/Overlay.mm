@@ -16,14 +16,21 @@
 #include "imgui.h"
 #include "imgui_impl_metal.h"
 
-static UIWindowScene *SSActiveWindowScene(void) {
-    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
-        if (scene.activationState == UISceneActivationStateForegroundActive &&
-            [scene isKindOfClass:[UIWindowScene class]]) {
-            return (UIWindowScene *)scene;
+static UIWindow *SSFindGameWindow(void) {
+    UIWindow *best = nil;
+    CGFloat bestArea = 0.f;
+    for (UIWindow *w in UIApplication.sharedApplication.windows) {
+        if (!w || w.hidden || w.alpha < 0.01f) continue;
+        if (w.windowLevel < UIWindowLevelNormal) continue;
+        CGRect f = w.bounds;
+        CGFloat area = f.size.width * f.size.height;
+        if (area > bestArea) {
+            bestArea = area;
+            best = w;
         }
     }
-    return nil;
+    if (best) return best;
+    return UIApplication.sharedApplication.keyWindow;
 }
 
 @interface StateScriptOverlayView : MTKView
@@ -37,9 +44,11 @@ static UIWindowScene *SSActiveWindowScene(void) {
 @end
 
 @interface StateScriptOverlay () <MTKViewDelegate>
-@property (nonatomic, strong) UIWindow *overlayWindow;
+@property (nonatomic, weak) UIWindow *hostWindow;
+@property (nonatomic, strong) UIWindow *menuWindow;
 @property (nonatomic, strong) StateScriptOverlayView *mtkView;
 @property (nonatomic, strong) UIButton *toggleButton;
+@property (nonatomic, strong) UILabel *watermarkLabel;
 @property (nonatomic, strong) id<MTLDevice> device;
 @property (nonatomic, strong) id<MTLCommandQueue> commandQueue;
 @property (nonatomic, assign) CFTimeInterval lastFrameTime;
@@ -62,64 +71,116 @@ static UIWindowScene *SSActiveWindowScene(void) {
     return self;
 }
 
+- (void)ensureMenuOverlayForGame:(UIWindow *)game {
+    if (self.menuWindow) return;
+
+    if (!self.device) {
+        self.device = MTLCreateSystemDefaultDevice();
+    }
+    if (!self.device) return;
+
+    if (!self.commandQueue) {
+        self.commandQueue = [self.device newCommandQueue];
+    }
+    if (!self.commandQueue) return;
+
+    CGRect bounds = game ? game.bounds : UIScreen.mainScreen.bounds;
+    UIWindowScene *scene = game.windowScene;
+    UIWindow *menu = nil;
+    if (scene) {
+        menu = [[UIWindow alloc] initWithWindowScene:scene];
+        menu.frame = bounds;
+    } else {
+        menu = [[UIWindow alloc] initWithFrame:bounds];
+    }
+
+    menu.windowLevel = UIWindowLevelAlert + 1;
+    menu.backgroundColor = UIColor.clearColor;
+    menu.opaque = NO;
+    menu.userInteractionEnabled = YES;
+    menu.hidden = YES;
+
+    StateScriptOverlayView *mtk = [[StateScriptOverlayView alloc] initWithFrame:bounds device:self.device];
+    mtk.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    mtk.delegate = self;
+    mtk.preferredFramesPerSecond = Settings::targetFPS.load();
+    mtk.clearColor = MTLClearColorMake(0, 0, 0, 0);
+    mtk.backgroundColor = UIColor.clearColor;
+    mtk.layer.opaque = NO;
+    mtk.userInteractionEnabled = YES;
+    mtk.paused = YES;
+    mtk.enableSetNeedsDisplay = NO;
+
+    UIViewController *vc = [UIViewController new];
+    vc.view = mtk;
+    menu.rootViewController = vc;
+
+    self.menuWindow = menu;
+    self.mtkView = mtk;
+}
+
 - (void)install {
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (self.overlayWindow) return;
+        UIWindow *game = SSFindGameWindow();
+        if (!game) return;
 
-        self.device = MTLCreateSystemDefaultDevice();
-        if (!self.device) return;
+        self.hostWindow = game;
+        [self setupToggleButtonOnWindow:game];
+        [self setupWatermarkOnWindow:game];
 
-        self.commandQueue = [self.device newCommandQueue];
-        if (!self.commandQueue) return;
-
-        CGRect bounds = UIScreen.mainScreen.bounds;
-        UIWindowScene *scene = SSActiveWindowScene();
-        if (scene) {
-            self.overlayWindow = [[UIWindow alloc] initWithWindowScene:scene];
-            self.overlayWindow.frame = bounds;
-        } else {
-            self.overlayWindow = [[UIWindow alloc] initWithFrame:bounds];
+        if (self.toggleButton) {
+            [game bringSubviewToFront:self.toggleButton];
         }
-
-        self.overlayWindow.windowLevel = UIWindowLevelStatusBar + 1;
-        self.overlayWindow.backgroundColor = UIColor.clearColor;
-        self.overlayWindow.opaque = NO;
-        self.overlayWindow.userInteractionEnabled = YES;
-
-        self.mtkView = [[StateScriptOverlayView alloc] initWithFrame:bounds device:self.device];
-        self.mtkView.delegate = self;
-        self.mtkView.preferredFramesPerSecond = Settings::targetFPS.load();
-        self.mtkView.clearColor = MTLClearColorMake(0, 0, 0, 0);
-        self.mtkView.backgroundColor = UIColor.clearColor;
-        self.mtkView.layer.opaque = NO;
-        self.mtkView.userInteractionEnabled = YES;
-        self.mtkView.paused = NO;
-        self.mtkView.enableSetNeedsDisplay = NO;
-
-        UIViewController *vc = [UIViewController new];
-        vc.view = self.mtkView;
-        self.overlayWindow.rootViewController = vc;
-
-        self.overlayWindow.hidden = NO;
-
-        [self setupToggleButton];
+        if (self.watermarkLabel) {
+            [game bringSubviewToFront:self.watermarkLabel];
+        }
     });
 }
 
-- (void)setupToggleButton {
+- (void)setupToggleButtonOnWindow:(UIWindow *)game {
+    if (self.toggleButton) {
+        if (self.toggleButton.superview != game) {
+            [game addSubview:self.toggleButton];
+        }
+        return;
+    }
+
     UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
-    btn.frame = CGRectMake(20, 80, 52, 52);
-    btn.backgroundColor = [[UIColor colorWithRed:0.35 green:0.15 blue:0.55 alpha:1] colorWithAlphaComponent:0.85];
-    btn.layer.cornerRadius = 26;
+    btn.frame = CGRectMake(16, 56, 56, 56);
+    btn.backgroundColor = [[UIColor colorWithRed:0.35 green:0.15 blue:0.55 alpha:1] colorWithAlphaComponent:0.92];
+    btn.layer.cornerRadius = 28;
+    btn.layer.borderWidth = 2.f;
+    btn.layer.borderColor = [UIColor colorWithWhite:1.f alpha:0.35].CGColor;
     [btn setTitle:@"SS" forState:UIControlStateNormal];
-    btn.titleLabel.font = [UIFont boldSystemFontOfSize:14];
+    btn.titleLabel.font = [UIFont boldSystemFontOfSize:15];
     [btn addTarget:self action:@selector(toggleMenu) forControlEvents:UIControlEventTouchUpInside];
 
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
     [btn addGestureRecognizer:pan];
 
-    [self.overlayWindow addSubview:btn];
+    [game addSubview:btn];
     self.toggleButton = btn;
+}
+
+- (void)setupWatermarkOnWindow:(UIWindow *)game {
+    if (Settings::bStreamerMode.load()) return;
+
+    if (self.watermarkLabel) {
+        if (self.watermarkLabel.superview != game) {
+            [game addSubview:self.watermarkLabel];
+        }
+        return;
+    }
+
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(10, game.bounds.size.height - 34, 160, 22)];
+    label.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin;
+    label.text = @"StateScript";
+    label.textColor = [UIColor colorWithWhite:1.f alpha:0.55f];
+    label.font = [UIFont boldSystemFontOfSize:12];
+    label.userInteractionEnabled = NO;
+    label.backgroundColor = UIColor.clearColor;
+    [game addSubview:label];
+    self.watermarkLabel = label;
 }
 
 - (void)handlePan:(UIPanGestureRecognizer *)gesture {
@@ -132,30 +193,53 @@ static UIWindowScene *SSActiveWindowScene(void) {
 - (void)toggleMenu {
     bool show = !Settings::bShowMenu.load();
     Settings::bShowMenu.store(show);
-    self.mtkView.userInteractionEnabled = YES;
+
+    if (!self.menuWindow || !self.mtkView) {
+        [self ensureMenuOverlayForGame:self.hostWindow];
+    }
+
+    if (self.menuWindow) {
+        self.menuWindow.hidden = !show;
+    }
+    if (self.mtkView) {
+        self.mtkView.paused = !show;
+        self.mtkView.userInteractionEnabled = show;
+    }
+
+    if (self.hostWindow && self.toggleButton) {
+        [self.hostWindow bringSubviewToFront:self.toggleButton];
+    }
 }
 
 - (void)applyStreamerMode {
-    self.toggleButton.hidden = Settings::bStreamerMode.load();
+    if (self.toggleButton) {
+        self.toggleButton.hidden = Settings::bStreamerMode.load();
+    }
+    if (self.watermarkLabel) {
+        self.watermarkLabel.hidden = Settings::bStreamerMode.load();
+    }
 }
 
 - (void)setupImGui {
-    if (self.imguiReady) return;
+    if (self.imguiReady || !self.mtkView) return;
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.DisplaySize = ImVec2((float)self.mtkView.bounds.size.width, (float)self.mtkView.bounds.size.height);
     ImGui_ImplMetal_Init(self.device);
     self.imguiReady = YES;
 }
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
-    (void)view;
-    (void)size;
+    if (self.imguiReady) {
+        ImGuiIO &io = ImGui::GetIO();
+        io.DisplaySize = ImVec2((float)size.width, (float)size.height);
+    }
 }
 
 - (void)drawInMTKView:(MTKView *)view {
-    if (!Settings::bIsAppActive.load()) return;
+    if (!Settings::bIsAppActive.load() || !Settings::bShowMenu.load()) return;
 
     CFTimeInterval now = CACurrentMediaTime();
     float dt = (float)(now - self.lastFrameTime);
@@ -166,7 +250,6 @@ static UIWindowScene *SSActiveWindowScene(void) {
 
     float w = (float)view.drawableSize.width;
     float h = (float)view.drawableSize.height;
-
     if (w <= 0.f || h <= 0.f) return;
 
     if (!Settings::Cheatoff.load()) {
