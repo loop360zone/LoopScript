@@ -29,20 +29,45 @@ jobs:
           mkdir -p "$THEOS/sdks"
           ln -sf "$SDK_PATH" "$THEOS/sdks/$SDK_NAME"
           ln -sf "$SDK_PATH" "$THEOS/sdks/iPhoneOS16.5.sdk"
-          echo "SDK=$SDK_NAME"
+          echo "SDK linked: $SDK_NAME"
           ls -la "$THEOS/sdks/"
 
       - name: Setup ImGui
         run: bash scripts/setup_imgui.sh
 
+      - name: Verify source files
+        run: |
+          set -e
+          grep -q 'AtomicBool' src/Settings.mm
+          grep -q 'using AtomicBool' src/Settings.h
+          grep -q 'SSIncludes.h' src/Unity/UnityAPI.mm
+          ! grep -q 'SS_BOOL' src/Settings.mm
+          ! grep -q '@import' src/Settings.mm src/Overlay/Overlay.h src/Unity/UnityAPI.mm Tweak.xm
+          ! grep -q 'StateScript_LOGOSFLAGS' Makefile
+          grep -q 'StateScript_OBJCFLAGS = -fobjc-arc' Makefile
+          ! grep 'StateScript_CFLAGS' Makefile | grep -q '\-fobjc-arc'
+          grep -q 'static_cast<Lang>' src/Menu/MenuRenderer.mm
+          echo "Source OK"
+
       - name: Build .deb package
         env:
           THEOS: ${{ github.workspace }}/theos
         run: |
+          set -o pipefail
           make clean || true
-          make package FINALPACKAGE=1 2>&1 | tee build.log
-          tail -n 100 build.log
-          ls -la packages/
+          make package FINALPACKAGE=1 DEBUG=0 2>&1 | tee build.log
+          tail -n 120 build.log
+          ls -la packages/ || true
+          test -n "$(ls -1 packages/*.deb 2>/dev/null)" || exit 1
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
