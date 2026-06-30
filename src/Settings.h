@@ -5,70 +5,67 @@
 
 namespace Settings {
 
-extern std::atomic<bool> bIsAppActive;
-extern std::atomic<bool> bShowMenu;
-extern std::atomic<bool> Cheatoff;
+using AtomicBool = std::atomic<bool>;
+using AtomicInt = std::atomic<int>;
+using AtomicFloat = std::atomic<float>;
 
-// ESP
-extern std::atomic<bool> bEnableESP;
-extern std::atomic<bool> bBoxESP;
-extern std::atomic<bool> bLineESP;
-extern std::atomic<bool> bDistanceESP;
-extern std::atomic<bool> bSkeletonESP;
-extern std::atomic<bool> bCountESP;
-extern std::atomic<bool> bMiniMapEsp;
-extern std::atomic<bool> bTurnEspRadius;
-extern std::atomic<float> espRadiusValue;
-extern std::atomic<int> lineOrigin;
-extern std::atomic<int> lineTarget;
-extern std::atomic<float> lineThickness;
+extern AtomicBool bIsAppActive;
+extern AtomicBool bShowMenu;
+extern AtomicBool Cheatoff;
 
-// Aimbot
-extern std::atomic<bool> bAimEnable;
-extern std::atomic<int> AimPart;
-extern std::atomic<bool> bAimLine;
-extern std::atomic<bool> bAimIndicator;
-extern std::atomic<bool> bAimDrawFov;
-extern std::atomic<bool> bVisibilityCheck;
-extern std::atomic<float> AimFov;
-extern std::atomic<float> AimSmooth;
-extern std::atomic<bool> bCrosshair;
-extern std::atomic<bool> FovEnable;
-extern std::atomic<float> FovVal;
+extern AtomicBool bEnableESP;
+extern AtomicBool bBoxESP;
+extern AtomicBool bLineESP;
+extern AtomicBool bDistanceESP;
+extern AtomicBool bSkeletonESP;
+extern AtomicBool bCountESP;
+extern AtomicBool bMiniMapEsp;
+extern AtomicBool bTurnEspRadius;
+extern AtomicFloat espRadiusValue;
+extern AtomicInt lineOrigin;
+extern AtomicInt lineTarget;
+extern AtomicFloat lineThickness;
 
-// Movement
-extern std::atomic<bool> bSpeedHack;
-extern std::atomic<bool> bFlyEnable;
-extern std::atomic<float> FlySpeed;
-extern std::atomic<float> FlyJoySpeed;
-extern std::atomic<bool> bShowJoystick;
-extern std::atomic<bool> bCarhack;
-extern std::atomic<float> Carspeed;
-extern std::atomic<bool> bCarFly;
-extern std::atomic<float> carFlySpeed;
+extern AtomicBool bAimEnable;
+extern AtomicInt AimPart;
+extern AtomicBool bAimLine;
+extern AtomicBool bAimIndicator;
+extern AtomicBool bAimDrawFov;
+extern AtomicBool bVisibilityCheck;
+extern AtomicFloat AimFov;
+extern AtomicFloat AimSmooth;
+extern AtomicBool bCrosshair;
+extern AtomicBool FovEnable;
+extern AtomicFloat FovVal;
 
-// Player scale
-extern std::atomic<bool> ScaleEnable;
-extern std::atomic<bool> BigHead;
-extern std::atomic<bool> BigChest;
-extern std::atomic<bool> BigBody;
-extern std::atomic<float> ScaleVal;
+extern AtomicBool bSpeedHack;
+extern AtomicBool bFlyEnable;
+extern AtomicFloat FlySpeed;
+extern AtomicFloat FlyJoySpeed;
+extern AtomicBool bShowJoystick;
+extern AtomicBool bCarhack;
+extern AtomicFloat Carspeed;
+extern AtomicBool bCarFly;
+extern AtomicFloat carFlySpeed;
 
-// Weapon
-extern std::atomic<bool> bInstantReload;
-extern std::atomic<bool> bFastShoot;
+extern AtomicBool ScaleEnable;
+extern AtomicBool BigHead;
+extern AtomicBool BigChest;
+extern AtomicBool BigBody;
+extern AtomicFloat ScaleVal;
 
-// Misc
-extern std::atomic<bool> bStreamerMode;
-extern std::atomic<bool> bEnableNotifications;
-extern std::atomic<int> MenuTheme;
-extern std::atomic<float> uiScale;
-extern std::atomic<int> selectedTab;
-extern std::atomic<int> targetFPS;
+extern AtomicBool bInstantReload;
+extern AtomicBool bFastShoot;
 
-// Teleport
-extern std::atomic<bool> bAutoTeleport;
-extern std::atomic<int> selectedTeleport;
+extern AtomicBool bStreamerMode;
+extern AtomicBool bEnableNotifications;
+extern AtomicInt MenuTheme;
+extern AtomicFloat uiScale;
+extern AtomicInt selectedTab;
+extern AtomicInt targetFPS;
+
+extern AtomicBool bAutoTeleport;
+extern AtomicInt selectedTeleport;
 
 void Load();
 void Save();

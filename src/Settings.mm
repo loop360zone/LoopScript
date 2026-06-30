@@ -1,93 +1,81 @@
 #include "Settings.h"
-#import <Foundation/Foundation.h>
-
-#define SS_BOOL(name, def) \
-    std::atomic<bool> name{def}; \
-    static const char *k##name = #name
-
-#define SS_INT(name, def) \
-    std::atomic<int> name{def}; \
-    static const char *k##name = #name
-
-#define SS_FLOAT(name, def) \
-    std::atomic<float> name{def}; \
-    static const char *k##name = #name
+@import Foundation;
 
 namespace Settings {
 
-SS_BOOL(bIsAppActive, true);
-SS_BOOL(bShowMenu, false);
-SS_BOOL(Cheatoff, false);
+AtomicBool bIsAppActive{true};
+AtomicBool bShowMenu{false};
+AtomicBool Cheatoff{false};
 
-SS_BOOL(bEnableESP, false);
-SS_BOOL(bBoxESP, true);
-SS_BOOL(bLineESP, true);
-SS_BOOL(bDistanceESP, true);
-SS_BOOL(bSkeletonESP, false);
-SS_BOOL(bCountESP, true);
-SS_BOOL(bMiniMapEsp, false);
-SS_BOOL(bTurnEspRadius, false);
-SS_FLOAT(espRadiusValue, 150.f);
-SS_INT(lineOrigin, 0);
-SS_INT(lineTarget, 0);
-SS_FLOAT(lineThickness, 1.5f);
+AtomicBool bEnableESP{false};
+AtomicBool bBoxESP{true};
+AtomicBool bLineESP{true};
+AtomicBool bDistanceESP{true};
+AtomicBool bSkeletonESP{false};
+AtomicBool bCountESP{true};
+AtomicBool bMiniMapEsp{false};
+AtomicBool bTurnEspRadius{false};
+AtomicFloat espRadiusValue{150.f};
+AtomicInt lineOrigin{0};
+AtomicInt lineTarget{0};
+AtomicFloat lineThickness{1.5f};
 
-SS_BOOL(bAimEnable, false);
-SS_INT(AimPart, 0);
-SS_BOOL(bAimLine, true);
-SS_BOOL(bAimIndicator, true);
-SS_BOOL(bAimDrawFov, true);
-SS_BOOL(bVisibilityCheck, true);
-SS_FLOAT(AimFov, 90.f);
-SS_FLOAT(AimSmooth, 5.f);
-SS_BOOL(bCrosshair, false);
-SS_BOOL(FovEnable, false);
-SS_FLOAT(FovVal, 90.f);
+AtomicBool bAimEnable{false};
+AtomicInt AimPart{0};
+AtomicBool bAimLine{true};
+AtomicBool bAimIndicator{true};
+AtomicBool bAimDrawFov{true};
+AtomicBool bVisibilityCheck{true};
+AtomicFloat AimFov{90.f};
+AtomicFloat AimSmooth{5.f};
+AtomicBool bCrosshair{false};
+AtomicBool FovEnable{false};
+AtomicFloat FovVal{90.f};
 
-SS_BOOL(bSpeedHack, false);
-SS_BOOL(bFlyEnable, false);
-SS_FLOAT(FlySpeed, 8.f);
-SS_FLOAT(FlyJoySpeed, 5.f);
-SS_BOOL(bShowJoystick, true);
-SS_BOOL(bCarhack, false);
-SS_FLOAT(Carspeed, 1.5f);
-SS_BOOL(bCarFly, false);
-SS_FLOAT(carFlySpeed, 10.f);
+AtomicBool bSpeedHack{false};
+AtomicBool bFlyEnable{false};
+AtomicFloat FlySpeed{8.f};
+AtomicFloat FlyJoySpeed{5.f};
+AtomicBool bShowJoystick{true};
+AtomicBool bCarhack{false};
+AtomicFloat Carspeed{1.5f};
+AtomicBool bCarFly{false};
+AtomicFloat carFlySpeed{10.f};
 
-SS_BOOL(ScaleEnable, false);
-SS_BOOL(BigHead, false);
-SS_BOOL(BigChest, false);
-SS_BOOL(BigBody, false);
-SS_FLOAT(ScaleVal, 1.5f);
+AtomicBool ScaleEnable{false};
+AtomicBool BigHead{false};
+AtomicBool BigChest{false};
+AtomicBool BigBody{false};
+AtomicFloat ScaleVal{1.5f};
 
-SS_BOOL(bInstantReload, false);
-SS_BOOL(bFastShoot, false);
+AtomicBool bInstantReload{false};
+AtomicBool bFastShoot{false};
 
-SS_BOOL(bStreamerMode, false);
-SS_BOOL(bEnableNotifications, true);
-SS_INT(MenuTheme, 0);
-SS_FLOAT(uiScale, 1.f);
-SS_INT(selectedTab, 0);
-SS_INT(targetFPS, 60);
+AtomicBool bStreamerMode{false};
+AtomicBool bEnableNotifications{true};
+AtomicInt MenuTheme{0};
+AtomicFloat uiScale{1.f};
+AtomicInt selectedTab{0};
+AtomicInt targetFPS{60};
 
-SS_BOOL(bAutoTeleport, false);
-SS_INT(selectedTeleport, 0);
+AtomicBool bAutoTeleport{false};
+AtomicInt selectedTeleport{0};
 
 static NSUserDefaults *Defaults() {
     return [[NSUserDefaults alloc] initWithSuiteName:@"com.statescript.hack"];
 }
 
-static void LoadBool(const char *key, std::atomic<bool> &out, bool def) {
+static void LoadBool(const char *key, AtomicBool &out, bool def) {
     id v = [Defaults() objectForKey:[NSString stringWithUTF8String:key]];
     out.store(v ? [v boolValue] : def);
 }
 
-static void LoadInt(const char *key, std::atomic<int> &out, int def) {
+static void LoadInt(const char *key, AtomicInt &out, int def) {
     id v = [Defaults() objectForKey:[NSString stringWithUTF8String:key]];
     out.store(v ? [v intValue] : def);
 }
 
-static void LoadFloat(const char *key, std::atomic<float> &out, float def) {
+static void LoadFloat(const char *key, AtomicFloat &out, float def) {
     id v = [Defaults() objectForKey:[NSString stringWithUTF8String:key]];
     out.store(v ? [v floatValue] : def);
 }
@@ -147,15 +135,15 @@ void Load() {
     LoadInt("selectedTeleport", selectedTeleport, 0);
 }
 
-static void SaveBool(const char *key, std::atomic<bool> &v) {
+static void SaveBool(const char *key, AtomicBool &v) {
     [Defaults() setBool:v.load() forKey:[NSString stringWithUTF8String:key]];
 }
 
-static void SaveInt(const char *key, std::atomic<int> &v) {
+static void SaveInt(const char *key, AtomicInt &v) {
     [Defaults() setInteger:v.load() forKey:[NSString stringWithUTF8String:key]];
 }
 
-static void SaveFloat(const char *key, std::atomic<float> &v) {
+static void SaveFloat(const char *key, AtomicFloat &v) {
     [Defaults() setFloat:v.load() forKey:[NSString stringWithUTF8String:key]];
 }
 
@@ -217,7 +205,3 @@ void Save() {
 }
 
 } // namespace Settings
-
-#undef SS_BOOL
-#undef SS_INT
-#undef SS_FLOAT
